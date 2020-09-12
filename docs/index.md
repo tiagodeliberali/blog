@@ -1,37 +1,28 @@
-## Welcome to GitHub Pages
+## Distributed systems
 
-You can use the [editor on GitHub](https://github.com/tiagodeliberali/blog/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Build a kafka like in Rust, to study some aspects of distributed system added to a more low level system programming.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Topics
 
-### Markdown
+### Single node
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+ - storing messages in a write ahead log
+ - set a offset to each message - finding messages quickly
+ - keep offset of consumers
+ - improving throughput through partitions
+ - message ordering and mutiple paritions - how to deal with that
+ - read offset strategies - ranges and commit offset
+ - partition replication - single leader strategy
+ - write strategies - single send, one cofirm, two confirms
 
-```markdown
-Syntax highlighted code block
+### Multiple nodes
 
-# Header 1
-## Header 2
-### Header 3
+ - leader node
+ - ping alive
+ - zookeeper
+ - change leader
 
-- Bulleted
-- List
+ ## References
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/tiagodeliberali/blog/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+  - Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems, from Martin Kleppmann
+  - Kafka: The Definitive Guide: Real-Time Data and Stream Processing at Scale, from Gwen Shapira, Neha Narkhede, and Todd Palino
