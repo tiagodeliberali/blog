@@ -1,12 +1,12 @@
-# Starting our kafka like publish/subscribe system
+# Starting our Kafka like publish/subscribe system
 
-To create this system, lets start humble and iterate over new features. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
+To create this system, let us start humble and iterate over new features. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
 
 - Publish content to our TCP server
 - Store data in a queue
 - Consume content in the same order that they are produced
 
-To allow us to have a consumer and a producer connected to the server at the same time, we need to deal with multithread and arc/mutex of our queue. By this way, we will be able to have multiple producers, but, to deliver ordered content to a consumer, we will be able to have a single consumer. More consumers will compete for the messages.
+To allow us to have a consumer and a producer connected to the server at the same time, we need to deal with multithread and arc/mutex of our queue. In this way, we will be able to have multiple producers, but, to deliver ordered content to a consumer, we will be able to have a single consumer. More consumers will compete for the messages.
 
 ## Our TCP server
 
@@ -32,7 +32,7 @@ Then, we will create a loop to process each connection to our server:
     }
 ```
 
-At this moment, we could deal with connections that would execute a single batch (one or more commands grouped toghether) each time. But, thinking about a kafka consumer or producer, I believe we should be able to keep the connection open and allow client and server exchange information. If we try to keep the connection open with the above code, since it is a single thread process, we will br waiting the first client to close the connection before to start processing the second connection.
+At this moment, we could deal with connections that would execute a single batch (one or more commands grouped) each time. But, thinking about a Kafka consumer or producer, I believe we should be able to keep the connection open and allow client and server exchange information. If we try to keep the connection open with the above code, since it is a single thread process, we will be waiting for the first client to close the connection before starting processing the second connection.
 
 Lets add more threads to our server:
 
@@ -49,10 +49,10 @@ Lets add more threads to our server:
     }
 ```
 
-Considering our basic scenario, we must define our protocol to produce, consume and close a connection with our service. Our initial version could be as simple as checking the fisrt character caming in the TCP request. 
+Considering our basic scenario, we must define our protocol to produce, consume, and close a connection with our service. Our initial version could be as simple as checking the first character coming in the TCP request. 
 
 - If we receive a `p`, we will add the content to our queue
-- A `c` will be understood a request to return the next content
+- A `c` will be understood as a request to return the next content
 - To close the connection, we will wait for a `q`
 
  Here is a implementation for our `handle_connection`:
@@ -85,7 +85,7 @@ fn handle_connection(mut stream: TcpStream) {
 
 ## Adding a queue
 
-To have a working publish/subscribe, we can add a queue. Since we spawn some threads, we can use [Arc/Mutex](https://doc.rust-lang.org/book/ch16-03-shared-state.html). The `Mutex` will allow us to mutate the queue safely and `Arc` allow us to share the `Mutex` between threads.
+To have a working publish/subscribe, we can add a queue. Since we spawn some threads, we can use [Arc/Mutex](https://doc.rust-lang.org/book/ch16-03-shared-state.html). The `Mutex` will allow us to mutate the queue safely and `Arc` allows us to share the `Mutex` between threads.
 
 ```rust
 let queue: VecDeque<String> = VecDeque::new();
@@ -134,13 +134,14 @@ fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>)
     }
 ```
 
-The full source code will be available at https://github.com/tiagodeliberali/logstreamer.
+The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer).
 
 ## See our service working
 
 Now, the fun part! To test ou service, you can run it and use [nc](https://en.wikipedia.org/wiki/Netcat) or event [telnet](https://en.wikipedia.org/wiki/Telnet) to connect to it and use our protocol to publish and consume messages from it.
 
-<pre>nc localhost 8080
+<pre>
+nc localhost 8080
 pXXX -&gt; publish content XXX
 c -&gt; consume new content
 q -&gt; close stream
@@ -152,7 +153,8 @@ pThird one
 ok
 </pre>
 
-<pre>nc localhost 8080
+<pre>
+nc localhost 8080
 pXXX -&gt; publish content XXX
 c -&gt; consume new content
 q -&gt; close stream
