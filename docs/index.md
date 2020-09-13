@@ -1,11 +1,12 @@
-## Distributed systems
+# Distributed systems
 
-Build a kafka like in Rust, to study some aspects of distributed system added to a more low level system programming.
+Build a kafka like publish/subscription application in Rust, to study some aspects of distributed system added to a more low level system programming.
 
 ## Topics
 
 ### Single node
 
+ - [first lines of code - a tcp service](initial_tcp_server.md)
  - storing messages in a write ahead log
  - set a offset to each message - finding messages quickly
  - keep offset of consumers
@@ -21,6 +22,9 @@ Build a kafka like in Rust, to study some aspects of distributed system added to
  - ping alive
  - zookeeper
  - change leader
+
+
+### Event driven architecture
 
  ## References
 
