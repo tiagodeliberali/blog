@@ -134,7 +134,7 @@ fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>)
     }
 ```
 
-The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer).
+The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer). This code is taggged with [v1.0.0](https://github.com/tiagodeliberali/logstreamer/releases/tag/1.0.0).
 
 ## See our service working
 
