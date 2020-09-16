@@ -110,6 +110,8 @@ fn store_data(
 fn read_data(mut stream: &TcpStream, queue: Arc<Mutex<VecDeque<String>>>) {
     if let Some(content) = queue.lock().unwrap().pop_back() {
         stream.write_all(content.as_bytes()).unwrap();
+    } else {
+        stream.write_all("empty\r\n".as_bytes()).unwrap();
     }
 }
 ```
@@ -134,7 +136,7 @@ fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>)
     }
 ```
 
-The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer). This code is taggged with [v1.0.0](https://github.com/tiagodeliberali/logstreamer/releases/tag/1.0.0).
+The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer). This code is taggged with [v0.1.0](https://github.com/tiagodeliberali/logstreamer/releases/tag/0.1.0).
 
 ## See our service working
 
@@ -165,5 +167,94 @@ Second message
 c
 Third one
 c
+empty
 c
+empty
 </pre>
+
+## How fast it can be?
+
+Let's build a small test. We can create two threads, on for producing and one for consuming messages through our log stream. Here is a simple 2M messages test:
+
+```rust
+use std::io::prelude::*;
+use std::net::TcpStream;
+use std::thread;
+use std::time::Instant;
+
+fn main() {
+    thread::spawn(move || {
+        let last_value = b"nice message 1999999";
+        let start = Instant::now();
+        let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
+        let mut i = 0;
+
+        loop {
+            stream.write_all("c\r\n".as_bytes()).unwrap();
+            stream.flush().unwrap();
+            let mut buffer = [0; 512];
+            let size = match stream.read(&mut buffer) {
+                Ok(value) => value,
+                Err(err) => {
+                    println!("Failed to read stream\n{}", err);
+                    continue;
+                }
+            };
+
+            if buffer.starts_with(last_value) {
+                println!(
+                    "CONSUMER MESSAGE FOUND {}",
+                    String::from_utf8_lossy(&buffer[..size])
+                );
+                break;
+            }
+
+            if i % 50_000 == 0 {
+                print!(
+                    "CONSUMED MESSAGE: {} WITH VALUE VALUE: {}",
+                    i,
+                    String::from_utf8_lossy(&buffer[..size])
+                );
+            }
+            i += 1;
+        }
+
+        let duration = start.elapsed();
+
+        println!("DURATION CONSUMER: {:?}", duration);
+    });
+
+    thread::spawn(move || {
+        let start = Instant::now();
+        let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
+
+        for i in 0..2_000_000 {
+            stream
+                .write_all(format!("pnice message {}\r\n", i).as_bytes())
+                .unwrap();
+            stream.flush().unwrap();
+            let mut buffer = [0; 512];
+            let _ = match stream.read(&mut buffer) {
+                Ok(value) => value,
+                Err(err) => {
+                    println!("Failed to read stream\n{}", err);
+                    continue;
+                }
+            };
+
+            if i % 50_000 == 0 {
+                println!("PRODUCED MESSAGE: {}", i);
+            }
+        }
+        let duration = start.elapsed();
+
+        println!("DURATION PRODUCER: {:?}", duration);
+    });
+
+    loop {}
+}
+```
+
+And, at my machine, we can process those `2M messages` in about `54 seconds`. It gives us an average of `27 μs per message`.
+
+Is this number relevant? Sure this system is pretty useless compared to Kafka, but it can serve us as a baseline to understand how each decision is going to take things slow.
