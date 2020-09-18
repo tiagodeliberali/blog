@@ -4,7 +4,7 @@ So, here is a nice challenge. Let's build an incredible distributed event stream
 
 Why should we spend time doing that? Well, first of all, it looks really fun! But, more than that, the reason is to learn a lot in the process, challenge some decisions, see how hard and complex some areas are, and, finally, try to connect ideas, theory, and practice.
 
-How far we can go with this project? No idea, but I have some ideas on how to start it. And our start could be very, very, humble. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
+How far we can go with this project? No idea, but I have some ideas on how to start it. And our start could be very, very humble. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
 
 - Publish content to our TCP server
 - Store data in a queue
@@ -176,7 +176,7 @@ c
 empty
 </pre>
 
-## How fast it can be?
+## How fast can it be?
 
 Let's build a small test. We can create two threads, on for producing and one for consuming messages through our log stream. Here is a simple 2M messages test:
 
