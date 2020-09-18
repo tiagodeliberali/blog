@@ -120,7 +120,7 @@ fn read_data(mut stream: &TcpStream, queue: Arc<Mutex<VecDeque<String>>>) {
 }
 ```
 
-Finally, we just clone ou Arc reference to send to the thread and change the signature of handle_connection to include it:
+Finally, we just clone the Arc reference to send to the thread and change the signature of handle_connection to include it:
 
 ```rust
 fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>) { ... }
@@ -144,7 +144,7 @@ The full source code will be available at [Github](https://github.com/tiagodelib
 
 ## See our service working
 
-Now, the fun part! To test ou service, you can run it and use [nc](https://en.wikipedia.org/wiki/Netcat) or [telnet](https://en.wikipedia.org/wiki/Telnet) to connect to it and use our protocol to publish and consume messages from it.
+Now, the fun part! To test our service, you can run it and use [nc](https://en.wikipedia.org/wiki/Netcat) or [telnet](https://en.wikipedia.org/wiki/Telnet) to connect to it and use our protocol to publish and consume messages from it.
 
 <pre>
 nc localhost 8080
