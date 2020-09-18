@@ -140,7 +140,7 @@ fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>)
     }
 ```
 
-The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer). This code is tagged with [v0.1.0](https://github.com/tiagodeliberali/logstreamer/releases/tag/0.1.0).
+The full source code will be available at [Github](https://github.com/tiagodeliberali/logstreamer). This code is tagged with [v0.1.1](https://github.com/tiagodeliberali/logstreamer/releases/tag/0.1.1).
 
 ## See our service working
 
@@ -187,7 +187,7 @@ use std::thread;
 use std::time::Instant;
 
 fn main() {
-    thread::spawn(move || {
+    let consumer = thread::spawn(move || {
         let last_value = b"nice message 1999999";
         let start = Instant::now();
         let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
@@ -228,7 +228,7 @@ fn main() {
         println!("DURATION CONSUMER: {:?}", duration);
     });
 
-    thread::spawn(move || {
+    let producer = thread::spawn(move || {
         let start = Instant::now();
         let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
 
@@ -255,11 +255,12 @@ fn main() {
         println!("DURATION PRODUCER: {:?}", duration);
     });
 
-    loop {}
+    consumer.join().unwrap();
+    producer.join().unwrap();
 }
 ```
 
-`On my machine™`, we can process those `2M messages` in about `52 seconds`. It gives us an average of `26 μs per message`.
+`On my machine™`, we can process those `2M messages` in about `48 seconds`. It gives us an average of `24 μs per message`.
 
 Is this number relevant? Sure this system is pretty useless compared to Kafka, but it can serve us as a baseline to understand how each decision is going to take things slow.
 
@@ -267,4 +268,4 @@ Is this number relevant? Sure this system is pretty useless compared to Kafka, b
 
 What if we do not establish a TCP connection and we just handle each request independently? We could remove the loop from our `handle_connection` and update the client moving the stream connections to inside the loops. How bad this can be for our performance?
 
-Well, after running this change a few times, the average is `292 seconds` to process the same workload. This means `146 μs per message`. That's a lot! So, we can keep the original code as-is for now.
+Well, after running this change a few times, the average is `272 seconds` to process the same workload. This means `136 μs per message`. That's a lot! So, we can keep the original code as-is for now.
