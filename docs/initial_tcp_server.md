@@ -2,7 +2,7 @@
 
 So, here is a nice challenge. Let's build an incredible distributed event streaming system copying the current most famous one! :)
 
-Why should we spend time doing that? Well, first of all, it looks really fun! But, more than that, the reason is to learn a lot in the process, challenge some decisions, see how hard and complex some areas are, and, finally, try to connect ideas, theory, and practice.
+Why should we spend time doing that? Well, first of all, it looks really fun! But more than that, the reason is to learn a lot in the process, challenge some decisions, see how hard and complex some areas are, and, finally, try to connect ideas, theory and practice.
 
 How far we can go with this project? No idea, but I have some ideas on how to start it. And our start could be very, very humble. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
 
@@ -14,7 +14,7 @@ To allow us to have a consumer and a producer connected to the server at the sam
 
 ## Our TCP server
 
-To start our server, lets bind a TCP listener to localhot at some port:
+To start our server, let's bind a TCP listener to localhost at some port:
 
 ```rust
     let listener = match TcpListener::bind("127.0.0.1:8080") {
@@ -36,7 +36,7 @@ Then, we will create a loop to process each connection to our server:
     }
 ```
 
-At this moment, we could deal with a single connection per time. But, thinking about how Kafka consumers or producers work, I believe we should be able to keep client and server connected exchanging information. If we try to keep the connection open with the above code, since it is a single thread process, the first to reach the server will be able to exchange data while the others will need to wait until it finishes.
+At this moment, we could deal with a single connection per time. But, thinking about how Kafka consumers or producers work, I believe we should be able to keep the client and server connected exchanging information. If we try to keep the connection open with the above code, since it is a single thread process, the first to reach the server will be able to exchange data while the others will need to wait until it finishes.
 
 To fix that, we can add more threads to our server:
 
@@ -59,7 +59,7 @@ Considering our basic scenario, we must define our protocol to produce, consume,
 - A `c` will be understood as a request to return the next content
 - To close the connection, we will wait for a `q`
 
- Here is a implementation for our `handle_connection`:
+Here is a implementation for our `handle_connection`:
 
 ```rust
 const C_KEY: u8 = 99;
@@ -259,12 +259,12 @@ fn main() {
 }
 ```
 
-At my machine, we can process those `2M messages` in about `52 seconds`. It gives us an average of `26 μs per message`.
+`On my machine™`, we can process those `2M messages` in about `52 seconds`. It gives us an average of `26 μs per message`.
 
 Is this number relevant? Sure this system is pretty useless compared to Kafka, but it can serve us as a baseline to understand how each decision is going to take things slow.
 
 ## What if...
 
-What if we do not establish a TCP connection and we just handle each request independently? We could remove the loop from our `handle_connection` and move the stream connection to inside the loop. How bad this can be for our performance?
+What if we do not establish a TCP connection and we just handle each request independently? We could remove the loop from our `handle_connection` and update the client moving the stream connections to inside the loops. How bad this can be for our performance?
 
 Well, after running this change a few times, the average is `292 seconds` to process the same workload. This means `146 μs per message`. That's a lot! So, we can keep the original code as-is for now.
