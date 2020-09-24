@@ -10,23 +10,22 @@ Build a kafka like publish/subscription application in Rust, to study some aspec
  - [Allowing multiple consumers](multiple_consumers.md)
  - reliability - adding checksum to messages
  - write ahead log
- - set a offset to each message - finding messages quickly
- - keep offset of consumers
- - improving throughput through partitions
- - message ordering and mutiple paritions - how to deal with that
  - read offset strategies - ranges and commit offset
- - partition replication - single leader strategy
  - write strategies - single send, one cofirm, two confirms
 
 ### Multiple nodes
 
+ - define controller
+ - partition replication
  - leader node
  - ping alive
  - zookeeper
  - change leader
 
-
 ### Event driven architecture
+
+ - how to use this stuff?
+
 
 ## References
 

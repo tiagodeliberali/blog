@@ -8,6 +8,7 @@ So, our next challenges are:
 
 - Set an offset to each message produced
 - Change the data structure to stop dropping a message from memory on consumption
+- Create a topic/partition structure
 
 
 ## Housekeeping first
