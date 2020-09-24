@@ -2,18 +2,17 @@
 
 Sure we should be proud of our initial service! It allows producers and consumers to flow messages, almost like a queue. But, we must be honest: it is far from a queue and far from Kafka as well. So, let's take our road toward Kafka! Let's allow multiple consumers!
 
-One aspect of Kafka design we will pay attention to now is its ability to have multiple consumers to get the same set of messages. We will achieve that by adding an offset, that will be a sequential id, to each message. Each consumer will be responsible for managing its own offset, that will be sent to the server together with the number of messages to be received.
+One aspect of Kafka design we will pay attention to now is its ability to have multiple consumers to get the same set of messages. We will achieve that replacing the data structure adopted in the [last session](https://tiagodeliberali.github.io/blog/initial_tcp_server.html) by a `Vec<Content>`. Also, we are going to create the topic/partition schema and take care of mutability and sync between threads.
 
 So, our next challenges are:
 
-- Set an offset to each message produced
 - Change the data structure to stop dropping a message from memory on consumption
 - Create a topic/partition structure
-
+- deal with multithread issues
 
 ## Housekeeping first
 
-Since our system is growing up (they grow up so fast!), we need to introduce some concepts to make things manageable. To have a place to put global structs, we introduced the `core` module and added a few basic types:
+Since our system is growing (they grow up so fast!), we need to introduce some concepts to make things manageable. To have a place to put global structs, we introduced the `core` module and added a few basic types:
 
 ```rust
 pub struct OffsetValue(pub u32);
@@ -32,7 +31,7 @@ pub struct Content {
 
 ## Improved communication
 
-Also, an area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. Here, we could define our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality, since it is an area that is well defined now.
+Also, an area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. We defined our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality, since it is an area that is better defined now.
 
 ```rust
 pub enum Action {
@@ -134,12 +133,12 @@ A deep dive into our communication module can show us how organized things can g
     }
 ```
 
-The magic happens inside `Buffer`, a small helper struct we use to maintain the cursor position we consumed from our u8 array. In this way, each call to `read_string`, `read_u32`, or `read_u8` guarantee that we are going to navigate inside the buffer while extract information. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
+The magic happens inside `Buffer`, a small helper struct we use to maintain the cursor position we consumed from our u8 array. In this way, each call to `read_string`, `read_u32`, or `read_u8` gives us a value while allows us to navigate inside the buffer. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
 
 
 ## Multithread storage sync
 
-We can create another important module to handle `storage` entities. In this way, we can split the logic of storing data, currently associated with a single partition, and introduce the code associated with the topic/partition organization. In our system, `Cluster` will keep a `HashMap` with topic names and `Vec`s of partitions. Each `Partition` is responsible for a `Vec` of contents and its own interior mutability.
+We created another important module to handle `storage` entities. In this way, we can split the logic of storing data, currently associated with a single partition, and introduce the code associated with the topic/partition organization. In our system, `Cluster` will keep a `HashMap` with topic names and `Vec`s of partitions. Each `Partition` is responsible for a `Vec` of contents and its own interior mutability.
 
 ```rust
 pub struct Cluster {
