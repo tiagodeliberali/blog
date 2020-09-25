@@ -156,7 +156,7 @@ In our case, we put out a collection of topics inside a `RwLock`. This sync stru
 
 Next, each `Partition` is evolved by `Arc`. `Arc` allows us to share [multiple references to a value allocated in heap](https://doc.rust-lang.org/beta/std/sync/struct.Arc.html). Since `Partition` has its own internal mutability mechanics, we can just clone references to it, which is a cheap operation.
 
-Inside partition, we choose to use a `Mutex`. Since a partition is a place where reads and writes occur in about the same frequency, as we are dealing with data streaming, we should not prioritize read nor write. At first, we can see a `RwLock` as a better option, because it could allow multiple reads at the same time, but it depends on OS specifics and, in Linux, it looks like it prioritizes reads making the write access to the lock scarce.
+Inside partition, we choose to use a `Mutex`. Since a partition is a place where reads and writes occur in about the same frequency, as we are dealing with data streaming, we should not prioritize read nor write. At first, we can see a `RwLock` as a better option, because it could allow multiple reads at the same time, but it depends on OS specifics and, in Linux, [it looks like it prioritizes reads making the write access to the lock scarce](https://stackoverflow.com/questions/56924866/why-do-rust-mutexes-not-seem-to-give-the-lock-to-the-thread-that-wanted-to-lock).
 
 How bad it can be to ignore all this stuff and just use a Mutex on `handle_connection`? Well, we can try it out and see by ourselves. I did a test with the following scenario:
 
