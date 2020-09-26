@@ -6,7 +6,7 @@ Build a kafka like publish/subscription application in Rust, to study some aspec
 
 ### Single node
 
- - [The first lines of code - a tcp service](initial_tcp_server.md)
+ - [The first lines of code - a TCP service](initial_tcp_server.md)
  - [Allowing multiple consumers](multiple_consumers.md)
  - reliability - adding checksum to messages
  - write ahead log
