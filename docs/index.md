@@ -17,10 +17,6 @@ Build a kafka like publish/subscription application in Rust, to study some aspec
 
  - [Electing the controller](electing_controller.md)
  - partition replication
- - leader node
- - ping alive
- - zookeeper
- - change leader
 
 ### Event driven architecture
 
