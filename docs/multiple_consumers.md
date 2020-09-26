@@ -133,7 +133,7 @@ A deep dive into our communication module can show us how organized things can g
     }
 ```
 
-The magic happens inside `Buffer`, a small helper struct we created to maintain the cursor position we consumed from our u8 array. In this way, each call to `read_string`, `read_u32`, or `read_u8` gives us a value while allows us to navigate inside the buffer. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
+The magic happens inside `Buffer`, a small helper struct we created to maintain the cursor position we consumed from our `u8 array`. In this way, each call to `read_string`, `read_u32`, or `read_u8` gives us a value while allows us to navigate inside the buffer. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
 
 
 ## Multithread storage sync
@@ -171,10 +171,12 @@ With a simple mutex, this scenario took about `380s to produce` and `600s to con
 
 In the end, we have something that looks a little bit more like Kafka. Since we introduced the topic/partition structure, we added a `CreateTopic` action and now we have something more serious here. Now we can:
 
-- create a topic with a defined number of partitions
-- produce and consume to specific partitions inside the topic
-- send and receive batches of content
-- keep consumers and producers connected working in parallel
+- Create a topic with a defined number of partitions
+- Produce and consume to specific partitions inside the topic
+- Send and receive batches of content
+- Keep consumers and producers connected working in parallel
+
+Here is the new version of `handle_connection`:
 
 ```rust
 fn handle_connection(mut stream: TcpStream, cluster: Arc<Cluster>) {
@@ -219,13 +221,13 @@ fn handle_connection(mut stream: TcpStream, cluster: Arc<Cluster>) {
 
 ### Faster than ever
 
-But, after so many changes and the introduction of many structs and concepts, how fast it can be? Well, again, we did some changes to the `client_test` to get some numbers. For our new test scenario, we have:
+After so many changes and the introduction of many structs and concepts, how fast it can be? Well, again, we did some changes to the `client_test` to get some numbers. For our new test scenario, we have:
 
 - 1 topic with 10 partitions
 - 10 producers creating 2M messages each to different partitions
 - 10 consumers reading from different partitions
-- batches of 30 messages on producers and consumers
+- Batches of 30 messages on producers and consumers
 
-So, to produce and consume 20 million messages, we took 16s on average! Well, it is about 1.25 million messages per second! A great number, for sure!
+So, to `produce and consume 20 million messages`, we took `16s on average`! Well, it is about `1.25 million messages per second`! A great number, for sure!
 
 The interesting part is that we could expand the capacity of our system allowing the creation of multiple partitions to a single topic. It helps because we can introduce a real parallelization of the work, since each partition has its own lock system, we reduce the competition to own the Vec to read and write content.
