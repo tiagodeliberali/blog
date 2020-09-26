@@ -10,9 +10,9 @@ We are going to go deep inside the distributed system but in baby steps. The fir
 
 ## Controller election
 
-But how it is elected? Today, Kafka relies strongly on Apache ZooKeeper to controller election. So, it is important to understand two concepts of ZooKeeper that control this election.
+But how it is elected? Today, Kafka relies strongly on Apache ZooKeeper to controller election. So, it is important to understand two concepts of ZooKeeper that control this process.
 
-First, we have the concept of a session. When a client connects to ZooKeeper, it also starts to send a heartbeat to inform ZooKeeper that it is alive. Also, we have the ephemeral node. This node keeps information added from a client while its session is alive. So, once a brokers crash, close a connection, or even blocks in garbage collection (something done by not so loved languages), all ephemeral nodes are deleted.
+First, we have the concept of `Session`. When a client connects to ZooKeeper, it also starts to send a heartbeat to inform that it is alive. The other concept is the `ephemeral node`. This node keeps information created by the client while its session is alive. So, once a brokers crash, close a connection, or even blocks in garbage collection (something done by not so loved languages), all ephemeral nodes are deleted.
 
 So, here is the election process: all broker try to create a `/controller` ephemeral node to ZooKeeper and the first one wins. The other will receive an error of `node already exists`. As easy as that. All brokers also subscribe to changes in the controller node. So, if something bad happens to the current controller, ZooKeeper will delete the controller node, all other brokers will be notified about this removal and will try to create the controller node again.
 
