@@ -8,7 +8,7 @@ So, our next challenges are:
 
 - Change the data structure to stop dropping a message from memory on consumption
 - Create a topic/partition structure
-- deal with multithread issues
+- Deal with multithread issues
 
 ## Housekeeping first
 
@@ -31,7 +31,7 @@ pub struct Content {
 
 ## Improved communication
 
-Also, an area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. We defined our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality, since it is an area that is better defined now.
+An area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. We defined our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality, since it is an area that is better defined now.
 
 ```rust
 pub enum Action {
@@ -59,7 +59,7 @@ pub struct ResponseMessage {
 }
 ```
 
-A deep dive into our communication module can show us how organized things can get. To give you some details about that (you can check our repo to see everything), here are our `parse` and `to_vec` associated with the `ActionMessage`:
+A deep dive into our communication module can show us how organized things can get. To give you some details about that ([you can check our repo](https://github.com/tiagodeliberali/logstreamer/releases/tag/0.2.0) to see everything), here are our `parse` and `to_vec` associated with the `ActionMessage`:
 
 ```rust
     pub fn parse(buffer: &[u8]) -> ActionMessage {
@@ -133,7 +133,7 @@ A deep dive into our communication module can show us how organized things can g
     }
 ```
 
-The magic happens inside `Buffer`, a small helper struct we use to maintain the cursor position we consumed from our u8 array. In this way, each call to `read_string`, `read_u32`, or `read_u8` gives us a value while allows us to navigate inside the buffer. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
+The magic happens inside `Buffer`, a small helper struct we created to maintain the cursor position we consumed from our u8 array. In this way, each call to `read_string`, `read_u32`, or `read_u8` gives us a value while allows us to navigate inside the buffer. The other two functions, `write_string` and `write_u32`, are helper functions that respect the schema proposed by our binary communication protocol.
 
 
 ## Multithread storage sync
@@ -150,11 +150,11 @@ pub struct Partition {
 }
 ```
 
-When dealing with multithread, Rust will require us to be diligent with the mutability of our instances. To try to make the best from locks and wait time, we can adopt a set of different strategies. 
+Rust bring us the concept of [fearless concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html) and some alternatives to model this kind of systems. Our initial design will be based on [Shared-State Concurrency](https://doc.rust-lang.org/book/ch16-03-shared-state.html) and the use of locks and multiple ownership types. To try to make the best from locks and wait time, we can adopt a set of different strategies. 
 
 In our case, we put out a collection of topics inside a `RwLock`. This sync structure has split `read` and a `write` lock, allowing multiple threads to read at the same time or a single thread to write. Our system will just write to this list in case of adding a new topic, something very rare compared to other operations. So, it is perfect here.
 
-Next, each `Partition` is evolved by `Arc`. `Arc` allows us to share [multiple references to a value allocated in heap](https://doc.rust-lang.org/beta/std/sync/struct.Arc.html). Since `Partition` has its own internal mutability mechanics, we can just clone references to it, which is a cheap operation.
+Next, each `Partition` is wraped by `Arc`. `Arc` allows us to share [multiple references to a value allocated in heap](https://doc.rust-lang.org/beta/std/sync/struct.Arc.html). Since `Partition` has its own internal mutability mechanics, we can just clone references to it, which is a cheap operation.
 
 Inside partition, we choose to use a `Mutex`. Since a partition is a place where reads and writes occur in about the same frequency, as we are dealing with data streaming, we should not prioritize read nor write. At first, we can see a `RwLock` as a better option, because it could allow multiple reads at the same time, but it depends on OS specifics and, in Linux, [it looks like it prioritizes reads making the write access to the lock scarce](https://stackoverflow.com/questions/56924866/why-do-rust-mutexes-not-seem-to-give-the-lock-to-the-thread-that-wanted-to-lock).
 
@@ -169,7 +169,7 @@ With a simple mutex, this scenario took about `380s to produce` and `600s to con
 
 ## A more realistic cluster
 
-In the end, we have something that looks like Kafka, at least a little bit now. Since we introduced the topic/partition structure, we added a `CreateTopic` action and now it looks like we have something more serious here. Now we can:
+In the end, we have something that looks a little bit more like Kafka. Since we introduced the topic/partition structure, we added a `CreateTopic` action and now we have something more serious here. Now we can:
 
 - create a topic with a defined number of partitions
 - produce and consume to specific partitions inside the topic
@@ -216,6 +216,8 @@ fn handle_connection(mut stream: TcpStream, cluster: Arc<Cluster>) {
     }
 }
 ```
+
+### Faster than ever
 
 But, after so many changes and the introduction of many structs and concepts, how fast it can be? Well, again, we did some changes to the `client_test` to get some numbers. For our new test scenario, we have:
 
