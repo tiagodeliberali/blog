@@ -162,8 +162,8 @@ How bad it can be to ignore all this stuff and just use a Mutex on `handle_conne
 
 - 10 producers producing 200k msgs each
 - 10 consumers
-- batches of 30 messages to consume and produce
-- everything working in parallel
+- Batches of 30 messages to consume and produce
+- Everything working in parallel
 
 With a simple mutex, this scenario took about `380s to produce` and `600s to consume`. When we changed to our implementation it took about `1 to 2s to produce and consume`. So, yes, it worth spending some time thinking about this stuff.
 
