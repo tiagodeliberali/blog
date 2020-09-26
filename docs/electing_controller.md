@@ -25,14 +25,14 @@ Let's tell the story of a set of brokers with an elected controller and its rela
 
 How the producer can have the list of partition leaders and brokers? Well, it must ask. So, it will ask one of the known brokers passing a list of topics and will receive as response a list of partition leaders and brokers. Now, it can store those values and use them to produce content.
 
-To make this beautiful story true, we must have few mechanics:
+To make this beautiful story true, we must have a few mechanics:
 
 - The controller is responsible for creating topic/partition overall brokers and distribute leader and replicas in a reasonable way
 - The controller also needs to keep one eye on each broker and be aware when one of them fails
 - In a failure situation, it must assign a new leader for each partition that had a leader on the dead broker
 - We must have a trustful source of partition leader and brokers
 
-Sure it does not cover everything, but it is a coherent start. From now, we are going to imagine things and try by ourselves ways to implement these mechanics, not necessarily copying Kafka implementation, but consulting it whenever it looks a good option.
+Sure it does not cover everything, but it is a coherent start. From now, we are going to imagine things and try by ourselves ways to implement these mechanics, not necessarily copying Kafka implementation, but consulting it whenever we are completely lost it looks a good option.
 
 ## How are we going to do the elections?
 
