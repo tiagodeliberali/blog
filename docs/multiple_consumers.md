@@ -1,8 +1,8 @@
 # Toward multiple consumers!
 
-Sure we should be proud of our initial service! It allows producers and consumers to flow messages, almost like a queue. But, we must be honest: it is far from a queue and far from Kafka as well. So, let's take our road toward Kafka! Let's allow multiple consumers!
+Sure we should be proud of our initial service! It allows producers and consumers to flow messages, almost like a queue. But, we must be honest: it is far from a queue and far from Kafka. So, let's take our road toward Kafka! Let's allow multiple consumers!
 
-One aspect of Kafka design we will pay attention to now is its ability to have multiple consumers to get the same set of messages. We will achieve that replacing the data structure adopted in the [last session](https://tiagodeliberali.github.io/blog/initial_tcp_server.html) by a `Vec<Content>`. Also, we are going to create the topic/partition schema and take care of mutability and sync between threads.
+One aspect of Kafka design we will pay attention to now is its ability to have multiple consumers to get the same set of messages. We will achieve that replacing the data structure adopted in the [last session](https://tiagodeliberali.github.io/blog/initial_tcp_server.html) by a `Vec<Content>`. Also, we will create the topic/partition schema and take care of mutability and sync between threads.
 
 So, our next challenges are:
 
@@ -31,7 +31,7 @@ pub struct Content {
 
 ## Improved communication
 
-An area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. We defined our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality, since it is an area that is better defined now.
+An area that needed more attention is the `communication` module. Here, we have a place to deal with byte streams, define the actions the system can deal with, and the responses it can return. We defined our binary protocol in a way that it will be easy to maintain and expand. Also, we added some tests to preserve functionality since it is an area that is better defined now.
 
 ```rust
 pub enum Action {
@@ -138,7 +138,7 @@ The magic happens inside `Buffer`, a small helper struct we created to maintain 
 
 ## Multithread storage sync
 
-We created another important module to handle `storage` entities. In this way, we can split the logic of storing data, currently associated with a single partition, and introduce the code associated with the topic/partition organization. In our system, `Cluster` will keep a `HashMap` with topic names and `Vec`s of partitions. Each `Partition` is responsible for a `Vec` of contents and its own interior mutability.
+We created another important module to handle `storage` entities. In this way, we can split the logic of storing data, currently associated with a single partition, and introduce the code associated with the topic/partition organization. In our system, `Cluster` will keep a `HashMap` with topic names and `Vec's of partitions. Each `Partition` is responsible for a `Vec` of contents and its own interior mutability.
 
 ```rust
 pub struct Cluster {
@@ -150,26 +150,26 @@ pub struct Partition {
 }
 ```
 
-Rust bring us the concept of [fearless concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html) and some alternatives to model this kind of systems. Our initial design will be based on [Shared-State Concurrency](https://doc.rust-lang.org/book/ch16-03-shared-state.html) and the use of locks and multiple ownership types. To try to make the best from locks and wait time, we can adopt a set of different strategies. 
+Rust brings us the concept of [fearless concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html) and some alternatives to model this kind of systems. Our initial design will be based on [Shared-State Concurrency](https://doc.rust-lang.org/book/ch16-03-shared-state.html) and the use of locks and multiple ownership types. To try to make the best from locks and wait time, we can adopt different strategies. 
 
-In our case, we put out a collection of topics inside a `RwLock`. This sync structure has split `read` and a `write` lock, allowing multiple threads to read at the same time or a single thread to write. Our system will just write to this list in case of adding a new topic, something very rare compared to other operations. So, it is perfect here.
+In our case, we put out a collection of topics inside a `RwLock`. This sync structure has split `read` and a `write` lock, allowing multiple threads to read simultaneously or a single thread to write. Our system will write to this list to add a new topic, something very rare compared to other operations. So, it is perfect here.
 
-Next, each `Partition` is wraped by `Arc`. `Arc` allows us to share [multiple references to a value allocated in heap](https://doc.rust-lang.org/beta/std/sync/struct.Arc.html). Since `Partition` has its own internal mutability mechanics, we can just clone references to it, which is a cheap operation.
+Next, each `Partition` is wrapped by `Arc`. `Arc` allows us to share [multiple references to a value allocated in a heap](https://doc.rust-lang.org/beta/std/sync/struct.Arc.html). Since `Partition` has its own internal mutability mechanics, we can clone references to it, which is a cheap operation.
 
-Inside partition, we choose to use a `Mutex`. Since a partition is a place where reads and writes occur in about the same frequency, as we are dealing with data streaming, we should not prioritize read nor write. At first, we can see a `RwLock` as a better option, because it could allow multiple reads at the same time, but it depends on OS specifics and, in Linux, [it looks like it prioritizes reads making the write access to the lock scarce](https://stackoverflow.com/questions/56924866/why-do-rust-mutexes-not-seem-to-give-the-lock-to-the-thread-that-wanted-to-lock).
+Inside partition, we choose to use a `Mutex`. Since a partition is a place where reads and writes occur in about the same frequency, we should not prioritize read or write as we are dealing with data streaming. At first, we can see a `RwLock` as a better option, because it could allow multiple reads at the same time, but it depends on OS specifics and, in Linux, [it looks like it prioritizes reads, making the write access to the lock scarce](https://stackoverflow.com/questions/56924866/why-do-rust-mutexes-not-seem-to-give-the-lock-to-the-thread-that-wanted-to-lock).
 
-How bad it can be to ignore all this stuff and just use a Mutex on `handle_connection`? Well, we can try it out and see by ourselves. I did a test with the following scenario:
+How bad can it be to ignore all this stuff and use a Mutex on `handle_connection`? Well, we can try it out and see by ourselves. I did a test with the following scenario:
 
 - 10 producers producing 200k msgs each
 - 10 consumers
 - Batches of 30 messages to consume and produce
 - Everything working in parallel
 
-With a simple mutex, this scenario took about `380s to produce` and `600s to consume`. When we changed to our implementation it took about `1 to 2s to produce and consume`. So, yes, it worth spending some time thinking about this stuff.
+With a simple mutex, this scenario took about `380s to produce` and `600s to consume`. When we changed to our implementation, it took about `1 to 2s to produce and consume`. So, yes, it worth spending some time thinking about this stuff.
 
 ## A more realistic cluster
 
-In the end, we have something that looks a little bit more like Kafka. Since we introduced the topic/partition structure, we added a `CreateTopic` action and now we have something more serious here. Now we can:
+In the end, we have something that looks a little bit more like Kafka. Since we introduced the topic/partition structure, we added a `CreateTopic` action, and now we have something more serious here. Now we can:
 
 - Create a topic with a defined number of partitions
 - Produce and consume to specific partitions inside the topic
@@ -221,13 +221,13 @@ fn handle_connection(mut stream: TcpStream, cluster: Arc<Cluster>) {
 
 ### Faster than ever
 
-After so many changes and the introduction of many structs and concepts, how fast it can be? Well, again, we did some changes to the `client_test` to get some numbers. For our new test scenario, we have:
+After so many changes and the introduction of many structs and concepts, how fast can it be? Well, again, we made some changes to the `client_test` to get some numbers. For our new test scenario, we have:
 
 - 1 topic with 10 partitions
 - 10 producers creating 2M messages each to different partitions
 - 10 consumers reading from different partitions
 - Batches of 30 messages on producers and consumers
 
-So, to `produce and consume 20 million messages`, we took `16s on average`! Well, it is about `1.25 million messages per second`! A great number, for sure!
+So, to `produce and consume 20 million messages`, we took '16s on average`! Well, it is about `1.25 million messages per second`! A great number, for sure!
 
-The interesting part is that we could expand the capacity of our system allowing the creation of multiple partitions to a single topic. It helps because we can introduce a real parallelization of the work, since each partition has its own lock system, we reduce the competition to own the Vec to read and write content.
+The interesting part is that we could expand our system's capacity, allowing the creation of multiple partitions to a single topic. It helps because we can introduce a real parallelization of the work. Since each partition has its own lock system, we reduce the competition to own the Vec to read and write content.

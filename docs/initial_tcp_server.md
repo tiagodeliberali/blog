@@ -2,15 +2,15 @@
 
 So, here is a nice challenge. Let's build an incredible distributed event streaming system copying the current most famous one! :)
 
-Why should we spend time doing that? Well, first of all, it looks really fun! But more than that, the reason is to learn a lot in the process, challenge some decisions, see how hard and complex some areas are, and, finally, try to connect ideas, theory and practice.
+Why should we spend time doing that? Well, first of all, it looks really fun! But more than that, the reason is to learn a lot in the process, challenge some decisions, see how hard and complex some areas are, and, finally, try to connect ideas, theory, and practice.
 
-How far we can go with this project? No idea, but I have some ideas on how to start it. And our start could be very, very humble. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
+How far can we go with this project? No idea, but I have some ideas on how to start it. And our start could be very, very humble. The initial idea, the simplest I can figure out, is a TCP server with a simple queue behind it. By this way, we will be able to:
 
 - Publish content to our TCP server
 - Store data in a queue
 - Consume content in the same order that they are produced
 
-To allow us to have a consumer and a producer connected to the server at the same time, we can use multithread and arc/mutex around our queue. In this way, we will be able to have multiple producers, but, to deliver ordered content, we will allow just a single consumer. More consumers will compete for the messages.
+To allow us to have a consumer and a producer connected to the server simultaneously, we can use multithread and arc/mutex around our queue. In this way, we will have multiple producers, but we will allow just a single consumer to deliver ordered content. More consumers will compete for the messages.
 
 ## Our TCP server
 
@@ -36,7 +36,7 @@ Then, we will create a loop to process each connection to our server:
     }
 ```
 
-At this moment, we could deal with a single connection per time. But, thinking about how Kafka consumers or producers work, I believe we should be able to keep the client and server connected exchanging information. If we try to keep the connection open with the above code, since it is a single thread process, the first to reach the server will be able to exchange data while the others will need to wait until it finishes.
+At this moment, we could deal with a single connection per time. But, thinking about how Kafka consumers or producers work, I believe we should keep the client and server connected exchanging information. If we try to keep the connection open with the above code, since it is a single thread process, the first to reach the server will exchange data while the others will need to wait until it finishes.
 
 To fix that, we can add more threads to our server:
 
@@ -53,7 +53,7 @@ To fix that, we can add more threads to our server:
     }
 ```
 
-Considering our basic scenario, we must define our protocol to produce, consume, and close a connection with our service. Our initial version could be as simple as checking the first character coming in the TCP stream. 
+Considering our basic scenario, we must define our protocol to produce, consume, and close the connection with our service. Our initial version could be as simple as checking the first character coming in the TCP stream. 
 
 - If we receive a `p`, we will add the content to our queue
 - A `c` will be understood as a request to return the next content
@@ -89,7 +89,7 @@ fn handle_connection(mut stream: TcpStream) {
 
 ## Adding a queue
 
-To have a working publish/subscribe, we can add a queue. Since we spawn some threads, we can use [Arc/Mutex](https://doc.rust-lang.org/book/ch16-03-shared-state.html). The `Mutex` will allow us to mutate the queue safely and `Arc` allows us to share the reference to the `Mutex` between threads.
+To have a working publish/subscribe, we can add a queue. Since we spawn some threads, we can use [Arc/Mutex](https://doc.rust-lang.org/book/ch16-03-shared-state.html). The `Mutex` will allow us to safely mutate the queue, and `Arc` allows us to share the reference to the `Mutex` between threads.
 
 ```rust
 let queue: VecDeque<String> = VecDeque::new();
@@ -120,7 +120,7 @@ fn read_data(mut stream: &TcpStream, queue: Arc<Mutex<VecDeque<String>>>) {
 }
 ```
 
-Finally, we just clone the Arc reference to send to the thread and change the signature of handle_connection to include it:
+Finally, we clone the Arc reference to send to the thread and change the signature of handle_connection to include it:
 
 ```rust
 fn handle_connection(mut stream: TcpStream, queue: Arc<Mutex<VecDeque<String>>>) { ... }
@@ -262,10 +262,10 @@ fn main() {
 
 `On my machine™`, we can process those `2M messages` in about `48 seconds`. It gives us an average of `24 μs per message`.
 
-Is this number relevant? Sure this system is pretty useless compared to Kafka, but it can serve us as a baseline to understand how each decision is going to take things slow.
+Is this number relevant? Sure this system is pretty useless compared to Kafka, but it can serve us as a baseline to understand how each decision will take things slow.
 
 ## What if...
 
-What if we do not establish a TCP connection and we just handle each request independently? We could remove the loop from our `handle_connection` and update the client moving the stream connections to inside the loops. How bad this can be for our performance?
+What if we do not establish a TCP connection, and we handle each request independently? We could remove the loop from our `handle_connection` and update the client moving the stream connections to inside the loops. How bad can this be for our performance?
 
-Well, after running this change a few times, the average is `272 seconds` to process the same workload. This means `136 μs per message`. That's a lot! So, we can keep the original code as-is for now.
+After running this change a few times, the average is `272 seconds` to process the same workload. This means `136 μs per message`. That's a lot! So, we can keep the original code as-is for now.

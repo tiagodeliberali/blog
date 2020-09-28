@@ -1,6 +1,6 @@
 # Distributed systems
 
-Build a kafka like publish/subscription application in Rust, to study some aspects of distributed system added to a more low level system programming.
+Build a Kafka like publish/subscription application in Rust to study aspects of the distributed system added to a more low-level system programming.
 
 ## Topics
 
@@ -8,10 +8,10 @@ Build a kafka like publish/subscription application in Rust, to study some aspec
 
  - [The first lines of code - a TCP service](initial_tcp_server.md)
  - [Allowing multiple consumers](multiple_consumers.md)
- - reliability - adding checksum to messages
- - write ahead log
+ - reliability - adding a checksum to messages
+ - write-ahead log
  - read offset strategies - ranges and commit offset
- - write strategies - single send, one cofirm, two confirms
+ - write strategies - single send, one confirms, two confirms
 
 ### Multiple nodes
 
@@ -27,6 +27,3 @@ Build a kafka like publish/subscription application in Rust, to study some aspec
 
   - Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems, from Martin Kleppmann
   - Kafka: The Definitive Guide: Real-Time Data and Stream Processing at Scale, from Gwen Shapira, Neha Narkhede, and Todd Palino
-
-
-
